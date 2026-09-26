@@ -33,7 +33,7 @@ const navSections = [
     {
         label: "Analysis",
         items: [
-            { to: "/analysis", label: "Resume Analysis", icon: ScanSearch },
+            { to: "/resume-analysis", label: "Resume Analysis", icon: ScanSearch },
             { to: "/ats-score", label: "ATS Score", icon: Target },
         ],
     },

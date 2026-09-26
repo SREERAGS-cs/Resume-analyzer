@@ -57,7 +57,7 @@ export default function LatestResume({ resume }) {
                         View Resume
                     </button>
                     <button
-                        onClick={() => navigate("/analysis")}
+                        onClick={() => navigate("/resume-analysis")}
                         className="flex-1 rounded-md bg-ink px-3.5 py-2 text-sm font-medium text-paper hover:bg-ink/90 transition-colors sm:flex-none"
                     >
                         Analyze

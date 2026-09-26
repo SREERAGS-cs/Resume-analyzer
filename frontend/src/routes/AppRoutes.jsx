@@ -13,8 +13,9 @@ import ProtectedRoute from "../components/common/ProtectedRoute";
 import PublicOnlyRoute from "../components/common/PublicOnlyRoute";
 import ResumeCreationFlow from "../components/resume-builder/ResumeCreationFlow";
 import MyDrafts from "../pages/MyDrafts";
+import ResumeAnalysis from "../pages/ResumeAnalysis";
+
 const placeholderRoutes = [
-    { path: "/analysis", title: "Resume Analysis" },
     { path: "/ats-score", title: "ATS Score" },
     { path: "/job-matching", title: "Job Matching" },
     { path: "/recommendations", title: "AI Recommendations" },
@@ -34,6 +35,7 @@ export default function AppRoutes() {
             <Route path="/my-drafts" element={<ProtectedRoute><MyDrafts /></ProtectedRoute>} />
             <Route path="/resume-history" element={<ProtectedRoute><ResumeHistory /></ProtectedRoute>} />
             <Route path="/resumes/:resumeId/review" element={<ProtectedRoute><ResumeReview /></ProtectedRoute>} />
+            <Route path="/resume-analysis" element={<ProtectedRoute><ResumeAnalysis /></ProtectedRoute>} />
 
             {/* Shared provider so template selection <-> builder navigation never loses data */}
             <Route path="/" element={<ProtectedRoute><ResumeCreationFlow /></ProtectedRoute>}>

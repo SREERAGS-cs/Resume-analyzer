@@ -4,7 +4,7 @@ import { Upload, PenLine, ScanSearch, Target, Briefcase } from "lucide-react";
 const actions = [
     { label: "Upload Resume", icon: Upload, to: "/upload-resume" },
     { label: "Create Resume", icon: PenLine, to: "/choose-template" },
-    { label: "Analyze Resume", icon: ScanSearch, to: "/analysis" },
+    { label: "Analyze Resume", icon: ScanSearch, to: "/resume-analysis" },
     { label: "Check ATS Score", icon: Target, to: "/ats-score" },
     { label: "Match Job", icon: Briefcase, to: "/job-matching" },
 ];

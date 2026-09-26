@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.database import Base, engine
-from app.models import user, resume, activity, parsed_resume, resume_draft  # noqa: F401
+from app.models import user, resume, activity, parsed_resume, resume_draft, analysis  # noqa: F401
 from app.routers import auth, resumes, dashboard, parsing, resume_drafts
 
 Base.metadata.create_all(bind=engine)
