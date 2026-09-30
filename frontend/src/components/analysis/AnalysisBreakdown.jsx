@@ -12,7 +12,7 @@ export default function AnalysisBreakdown({ sections }) {
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-line">
                             <div className="h-full rounded-full bg-ink" style={{ width: `${(s.score / s.maxScore) * 100}%` }} />
                         </div>
-                        <p className="mt-1.5 text-xs text-ink/60">{s.description}</p>
+                        {s.description && <p className="mt-1.5 text-xs text-ink/60">{s.description}</p>}
                     </div>
                 ))}
             </div>

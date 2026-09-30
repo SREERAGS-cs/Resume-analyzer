@@ -8,5 +8,5 @@ pydantic-settings
 python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
-pyplumber
+pdfplumber
 python-docx

@@ -13,15 +13,23 @@ import RecommendationCard from "../components/analysis/RecommendationCard";
 import AnalysisEmptyState from "../components/analysis/AnalysisEmptyState";
 import AnalysisLoadingState from "../components/analysis/AnalysisLoadingState";
 import AnalysisErrorState from "../components/analysis/AnalysisErrorState";
-import mockResumeAnalysis from "../data/mockResumeAnalysis";
-import { getResumes } from "../services/resumeService";
+import { getResumes, getParsedResume } from "../services/resumeService";
+import { analyzeResume, getLatestAnalysis } from "../services/resumeAnalysisService";
+import { mapAnalysisResponse } from "../utils/mapAnalysisResponse";
+// mock data kept for local reference only — never rendered as if it were real: ../data/mockResumeAnalysis
 
 export default function ResumeAnalysis() {
     const navigate = useNavigate();
     const [resumes, setResumes] = useState([]);
     const [loadingResumes, setLoadingResumes] = useState(true);
     const [selectedId, setSelectedId] = useState(null);
-    const [analysis, setAnalysis] = useState(null);
+
+    const [analysis, setAnalysis] = useState(null);      // mapped view-model or null
+    const [hasAnalysis, setHasAnalysis] = useState(null); // null = unknown/loading, false = none yet
+    const [sectionsDetected, setSectionsDetected] = useState([]);
+    const [notParsed, setNotParsed] = useState(false);
+
+    const [loadingAnalysis, setLoadingAnalysis] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
     const [error, setError] = useState(false);
 
@@ -32,36 +40,77 @@ export default function ResumeAnalysis() {
                 setResumes(data);
                 if (data.length > 0) {
                     setSelectedId(data[0].id);
-                    setAnalysis({ ...mockResumeAnalysis, resumeName: data[0].display_name });
                 }
-            } catch {
-                setResumes([]);
             } finally {
                 setLoadingResumes(false);
             }
         })();
     }, []);
 
-    const handleSelectChange = (id) => {
-        setSelectedId(id);
-        const resume = resumes.find((r) => String(r.id) === String(id));
-        setAnalysis({ ...mockResumeAnalysis, resumeName: resume?.display_name || mockResumeAnalysis.resumeName });
+    useEffect(() => {
+        if (!selectedId) return;
+        loadForResume(selectedId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedId]);
+
+    const loadForResume = async (resumeId) => {
+        setLoadingAnalysis(true);
         setError(false);
+        setNotParsed(false);
+        setSectionsDetected([]);
+
+        const resume = resumes.find((r) => String(r.id) === String(resumeId));
+        const isParsed = resume?.parsing_status === "needs_review" || resume?.parsing_status === "verified";
+
+        if (isParsed) {
+            try {
+                const parsed = await getParsedResume(resumeId);
+                setSectionsDetected([
+                    { name: "Personal Information", detected: !!(parsed.personal_info?.full_name && parsed.personal_info?.email) },
+                    { name: "Professional Summary", detected: !!parsed.summary },
+                    { name: "Education", detected: (parsed.education || []).length > 0 },
+                    { name: "Projects", detected: (parsed.projects || []).length > 0 },
+                    { name: "Skills", detected: (parsed.skills || []).length > 0 },
+                    { name: "Certifications", detected: (parsed.certifications || []).length > 0 },
+                    { name: "Experience", detected: (parsed.experience || []).length > 0 },
+                ]);
+            } catch {
+                // non-fatal — overview list just stays empty
+            }
+        } else {
+            setNotParsed(true);
+        }
+
+        try {
+            const result = await getLatestAnalysis(resumeId);
+            setAnalysis(mapAnalysisResponse(result, resume?.display_name));
+            setHasAnalysis(true);
+        } catch (err) {
+            if (err.response?.status === 404) {
+                setHasAnalysis(false);
+                setAnalysis(null);
+            } else {
+                setError(true);
+            }
+        } finally {
+            setLoadingAnalysis(false);
+        }
     };
 
-    const handleAnalyze = () => {
+    const handleAnalyze = async () => {
         setAnalyzing(true);
         setError(false);
-        // Placeholder for the future POST /api/resume-analysis/analyze call.
-        setTimeout(() => {
-            setAnalysis((prev) => ({ ...(prev || mockResumeAnalysis), lastAnalyzed: "Just now" }));
+        try {
+            const result = await analyzeResume(selectedId);
+            const resume = resumes.find((r) => String(r.id) === String(selectedId));
+            setAnalysis(mapAnalysisResponse(result, resume?.display_name));
+            setHasAnalysis(true);
+            setNotParsed(false);
+        } catch {
+            setError(true);
+        } finally {
             setAnalyzing(false);
-        }, 1400);
-    };
-
-    const handleRetry = () => {
-        setError(false);
-        handleAnalyze();
+        }
     };
 
     return (
@@ -77,15 +126,44 @@ export default function ResumeAnalysis() {
                     <ResumeSelector
                         resumes={resumes}
                         selectedId={selectedId}
-                        onChange={handleSelectChange}
+                        onChange={setSelectedId}
                         onAnalyze={handleAnalyze}
                         analyzing={analyzing}
                     />
 
-                    {analyzing && <AnalysisLoadingState />}
-                    {!analyzing && error && <AnalysisErrorState onRetry={handleRetry} />}
+                    {(loadingAnalysis || analyzing) && <AnalysisLoadingState />}
 
-                    {!analyzing && !error && analysis && (
+                    {!loadingAnalysis && !analyzing && error && (
+                        <AnalysisErrorState onRetry={() => (hasAnalysis === false ? handleAnalyze() : loadForResume(selectedId))} />
+                    )}
+
+                    {!loadingAnalysis && !analyzing && !error && notParsed && (
+                        <div className="rounded-lg border border-dashed border-line bg-white p-6 text-center">
+                            <p className="text-sm font-medium text-ink">This resume hasn't been parsed yet.</p>
+                            <p className="mt-1 text-sm text-ink/60">Review and confirm its content before requesting an analysis.</p>
+                            <button
+                                onClick={() => navigate(`/resumes/${selectedId}/review`)}
+                                className="mt-4 rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper hover:bg-ink/90"
+                            >
+                                Go to Resume Review
+                            </button>
+                        </div>
+                    )}
+
+                    {!loadingAnalysis && !analyzing && !error && !notParsed && hasAnalysis === false && (
+                        <div className="rounded-lg border border-dashed border-line bg-white p-6 text-center">
+                            <p className="text-sm font-medium text-ink">No analysis has been performed yet.</p>
+                            <p className="mt-1 text-sm text-ink/60">Run an analysis to see your resume's score and recommendations.</p>
+                            <button
+                                onClick={handleAnalyze}
+                                className="mt-4 rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper hover:bg-ink/90"
+                            >
+                                Analyze Resume
+                            </button>
+                        </div>
+                    )}
+
+                    {!loadingAnalysis && !analyzing && !error && analysis && (
                         <div className="flex flex-col gap-6">
                             <OverallScore score={analysis.overallScore} />
 
@@ -95,11 +173,13 @@ export default function ResumeAnalysis() {
                                 <ScoreCard label="Skills" score={analysis.categoryScores.skills} />
                             </div>
 
-                            <ResumeOverview
-                                resumeName={analysis.resumeName}
-                                lastAnalyzed={analysis.lastAnalyzed}
-                                sectionsDetected={analysis.sectionsDetected}
-                            />
+                            {sectionsDetected.length > 0 && (
+                                <ResumeOverview
+                                    resumeName={analysis.resumeName}
+                                    lastAnalyzed={analysis.lastAnalyzed}
+                                    sectionsDetected={sectionsDetected}
+                                />
+                            )}
 
                             <AnalysisBreakdown sections={analysis.sectionScores} />
 
@@ -112,7 +192,7 @@ export default function ResumeAnalysis() {
                                 <h2 className="mb-3 font-display text-base font-semibold text-ink">AI Recommendations</h2>
                                 <div className="flex flex-col gap-3">
                                     {analysis.recommendations.map((r, i) => (
-                                        <RecommendationCard key={i} index={i + 1} title={r.title} description={r.description} />
+                                        <RecommendationCard key={i} index={i + 1} title={r.title} description={r.description} priority={r.priority} />
                                     ))}
                                 </div>
                             </div>

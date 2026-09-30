@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 class RecommendationItem(BaseModel):
     title: str
     description: str
+    priority: str = "medium"
 
 
 class ResumeAnalysisBase(BaseModel):
@@ -34,3 +35,17 @@ class ResumeAnalysisResponse(ResumeAnalysisBase):
 
     class Config:
         from_attributes = True
+
+
+class ResumeAnalysisHistoryItem(BaseModel):
+    id: int
+    resume_id: int
+    overall_score: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AnalyzeRequest(BaseModel):
+    resume_id: int
