@@ -15,9 +15,9 @@ class ParsedResume(Base):
     status = Column(String(20), nullable=False, default="not_started")
 
     raw_text = Column(Text, nullable=True)
-
     header_block = Column(Text, nullable=True)
     summary = Column(Text, nullable=True)
+
     skills_raw = Column(Text, nullable=True)
     education_raw = Column(Text, nullable=True)
     experience_raw = Column(Text, nullable=True)
@@ -32,8 +32,12 @@ class ParsedResume(Base):
     projects = Column(JSON, nullable=True)
     certifications = Column(JSON, nullable=True)
     achievements = Column(JSON, nullable=True)
-    other_sections = Column(JSON, nullable=True)          # {"languages": "...", "coursework": "..."}
-    unrecognized_sections = Column(JSON, nullable=True)   # headers we couldn't classify
+
+    other_sections = Column(JSON, nullable=True)
+    unrecognized_sections = Column(JSON, nullable=True)
+
+    parser_used = Column(String(20), nullable=True)      # "gemini" | "fallback"
+    parser_warning = Column(Text, nullable=True)          # set only when fallback was used
 
     parse_error = Column(Text, nullable=True)
     parsed_at = Column(DateTime(timezone=True), nullable=True)

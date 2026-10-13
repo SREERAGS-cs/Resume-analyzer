@@ -32,6 +32,8 @@ class ParsedResumeOut(BaseModel):
     achievements: list[dict] | None = None
     other_sections: dict | None = None
     unrecognized_sections: dict | None = None
+    parser_used: str | None = None
+    parser_warning: str | None = None
     parse_error: str | None = None
     parsed_at: datetime | None = None
     verified_at: datetime | None = None
@@ -41,7 +43,6 @@ class ParsedResumeOut(BaseModel):
 
 
 class ParsedResumeUpdate(BaseModel):
-    """All fields optional — only what the user actually edited is sent and applied."""
     personal_info: dict | None = None
     summary: str | None = None
     skills: list[str] | None = None

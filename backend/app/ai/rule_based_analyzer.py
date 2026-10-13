@@ -25,6 +25,28 @@ def _safe_dict(value) -> dict:
     return value if isinstance(value, dict) else {}
 
 
+def _extract_skills_list(skills) -> list[str]:
+    if isinstance(skills, list):
+        items = []
+        for s in skills:
+            if isinstance(s, str) and s.strip():
+                items.append(s.strip())
+            elif isinstance(s, dict):
+                val = s.get("name") or s.get("skill") or s.get("title")
+                if isinstance(val, str) and val.strip():
+                    items.append(val.strip())
+        return items
+    if isinstance(skills, dict):
+        items = []
+        for v in skills.values():
+            items.extend(_extract_skills_list(v))
+        return items
+    if isinstance(skills, str) and skills.strip():
+        import re
+        return [s.strip() for s in re.split(r"[,|\n•]", skills) if s.strip()]
+    return []
+
+
 def _has_action_verb(text: str) -> bool:
     lower = text.lower()
     return any(verb in lower for verb in ACTION_VERBS)
@@ -91,7 +113,7 @@ def analyze_personal_information(personal_info) -> dict:
 def analyze_summary(summary, skills=None) -> dict:
     text = _safe_str(summary)
     word_count = len(text.split()) if text else 0
-    skills = _safe_list(skills)
+    skills = _extract_skills_list(skills)
     strengths, improvements = [], []
 
     if not text:
@@ -228,7 +250,7 @@ def analyze_projects(projects) -> dict:
 
 
 def analyze_skills(skills) -> dict:
-    items = [s for s in _safe_list(skills) if isinstance(s, str) and s.strip()]
+    items = _extract_skills_list(skills)
     count = len(items)
     strengths, improvements = [], []
 
@@ -278,7 +300,7 @@ def analyze_structure(personal_info, summary, education, experience, projects, s
     has_contact = bool(_safe_str(info.get("full_name"))) and bool(_safe_str(info.get("email")))
     has_summary = bool(_safe_str(summary))
     has_education = bool(_safe_list(education))
-    has_skills = bool(_safe_list(skills))
+    has_skills = bool(_extract_skills_list(skills))
     has_projects = bool(_safe_list(projects))
     has_experience = bool(_safe_list(experience))
     has_certifications = bool(_safe_list(certifications))
@@ -326,7 +348,7 @@ def calculate_content_score(summary, experience, projects, skills) -> int:
 
     word_count = len(combined_text.split())
     lower_text = combined_text.lower()
-    mentions_skills = any(isinstance(s, str) and s.lower() in lower_text for s in _safe_list(skills))
+    mentions_skills = any(isinstance(s, str) and s.lower() in lower_text for s in _extract_skills_list(skills))
 
     score = 45
     if word_count >= 40:

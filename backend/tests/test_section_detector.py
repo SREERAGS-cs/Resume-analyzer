@@ -53,8 +53,8 @@ def test_missing_sections_are_absent_not_fabricated():
 
 def test_detects_other_section():
     result = detect_sections(SAMPLE_RESUME)
-    assert "languages" in result["other_sections"]
-    assert "English" in result["other_sections"]["languages"]
+    assert "languages" in result["sections"]
+    assert "English" in result["sections"]["languages"]
 
 
 def test_preserves_special_tech_names_within_section():

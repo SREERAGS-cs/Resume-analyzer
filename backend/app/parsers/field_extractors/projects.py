@@ -41,6 +41,40 @@ def _build_entry(chunk_lines: list[str]) -> dict:
     return entry
 
 
+def _build_entry(chunk_lines: list[str]) -> dict:
+    entry = {"name": None, "description": None, "technologies": [], "role": None, "link": None}
+    if not chunk_lines:
+        return entry
+
+    chunk = "\n".join(chunk_lines)
+
+    link_match = LINK_PATTERN.search(chunk)
+    if link_match:
+        entry["link"] = link_match.group()
+
+    tech_match = TECH_LIST_PATTERN.search(chunk)
+    if tech_match:
+        entry["technologies"] = [t.strip() for t in re.split(r"[,|]", tech_match.group(3)) if t.strip()]
+
+    # First non-tech, non-bullet line is the title
+    description_lines = []
+    for line in chunk_lines:
+        bullet_match = BULLET_PATTERN.match(line)
+        if bullet_match:
+            description_lines.append(bullet_match.group(1).strip())
+        elif TECH_LIST_PATTERN.search(line) or LINK_PATTERN.search(line):
+            continue
+        elif entry["name"] is None:
+            entry["name"] = line.split("|")[0].strip()
+        else:
+            description_lines.append(line)
+
+    if description_lines:
+        entry["description"] = " ".join(description_lines)
+
+    return entry
+
+
 def extract_projects(projects_raw: str | None) -> list[dict]:
     if not projects_raw:
         return []
@@ -49,34 +83,37 @@ def extract_projects(projects_raw: str | None) -> list[dict]:
     if not lines:
         return []
 
-    # Preferred: split wherever a "Name | Tech stack" title line appears —
-    # far more reliable than bullet position, which some PDFs render oddly.
-    title_indices = [i for i, l in enumerate(lines) if TITLE_LINE_PATTERN.match(l)]
+    # Identify project title line indices.
+    title_indices = []
+    for i, line in enumerate(lines):
+        if line.startswith(("•", "-", "*", "–")):
+            continue
+        if TECH_LIST_PATTERN.search(line) or LINK_PATTERN.search(line):
+            continue
+        if len(line) > 50:
+            continue
+        has_tech = any(TECH_LIST_PATTERN.search(lines[j]) for j in range(i + 1, min(i + 3, len(lines))))
+        has_bullet = any(lines[j].startswith(("•", "-", "*", "–")) for j in range(i + 1, min(i + 4, len(lines))))
+        if has_tech:
+            title_indices.append(i)
+        elif TITLE_LINE_PATTERN.match(line):
+            title_indices.append(i)
+        elif has_bullet and (line.isupper() or line.istitle() or re.match(r"^[A-Za-z0-9\s:-]{3,40}$", line)):
+            title_indices.append(i)
 
-    if len(title_indices) >= 1:
-        chunks = []
-        for idx, start in enumerate(title_indices):
-            end = title_indices[idx + 1] if idx + 1 < len(title_indices) else len(lines)
-            chunks.append(lines[start:end])
-        # Anything before the first title line doesn't belong to a project — drop it
-        return [_build_entry(chunk) for chunk in chunks]
-
-    # Fallback: blank-line separated chunks (works when there IS reliable spacing)
-    chunks_by_blank = [c.strip() for c in re.split(r"\n\s*\n", projects_raw) if c.strip()]
-    if len(chunks_by_blank) > 1:
+    if not title_indices:
+        chunks_by_blank = [c.strip() for c in re.split(r"\n\s*\n", projects_raw) if c.strip()]
         return [_build_entry(c.split("\n")) for c in chunks_by_blank]
 
-    # Last resort: old bullet-position-based chunking
-    chunks, current, seen_bullet = [], [], False
-    for line in lines:
-        is_bullet = bool(BULLET_PATTERN.match(line))
-        if not is_bullet and seen_bullet:
-            chunks.append(current)
-            current, seen_bullet = [], False
-        current.append(line)
-        if is_bullet:
-            seen_bullet = True
-    if current:
-        chunks.append(current)
+    chunks = []
+    for idx, start in enumerate(title_indices):
+        end = title_indices[idx + 1] if idx + 1 < len(title_indices) else len(lines)
+        chunks.append(lines[start:end])
 
-    return [_build_entry(chunk) for chunk in chunks]
+    entries = []
+    for chunk_lines in chunks:
+        entry = _build_entry(chunk_lines)
+        if entry.get("name") and (entry.get("description") or entry.get("technologies")):
+            entries.append(entry)
+
+    return entries

@@ -13,6 +13,7 @@ from app.parsers.field_extractors.experience import extract_experience
 from app.parsers.field_extractors.projects import extract_projects
 from app.parsers.field_extractors.certifications import extract_certifications
 from app.parsers.field_extractors.achievements import extract_achievements
+from app.ai.resume_parser.resume_extractor import extract_resume_data as extract_with_gemini
 
 
 def get_parsed_resume(db: Session, resume_id: int) -> ParsedResume | None:
@@ -30,6 +31,34 @@ def get_or_create_parsed_record(db: Session, resume: Resume) -> ParsedResume:
     return record
 
 
+def _run_fallback_extraction(record: ParsedResume, raw_text: str, hyperlinks: list[str]) -> dict:
+    """Existing deterministic pipeline, reshaped into the same uniform structure Gemini returns."""
+    detected = detect_sections(raw_text)
+
+    record.header_block = detected["header_block"]
+    record.skills_raw = detected["sections"].get("skills")
+    record.education_raw = detected["sections"].get("education")
+    record.experience_raw = detected["sections"].get("experience")
+    record.projects_raw = detected["sections"].get("projects")
+    record.certifications_raw = detected["sections"].get("certifications")
+    record.achievements_raw = detected["sections"].get("achievements")
+
+    return {
+        "personal_info": extract_personal_info(detected["header_block"], hyperlinks),
+        "summary": detected["sections"].get("summary"),
+        "skills": extract_skills(detected["sections"].get("skills")),
+        "education": extract_education(detected["sections"].get("education")),
+        "experience": extract_experience(detected["sections"].get("experience")),
+        "projects": extract_projects(detected["sections"].get("projects")),
+        "certifications": extract_certifications(detected["sections"].get("certifications")),
+        "achievements": extract_achievements(detected["sections"].get("achievements")),
+        "organizations": [], "responsibilities": [], "publications": [],
+        "volunteering": [], "languages": [], "interests": [],
+        "other_sections": detected["other_sections"],
+        "unrecognized_sections": detected["unrecognized_sections"],
+    }
+
+
 def run_parsing_pipeline(db: Session, resume: Resume) -> ParsedResume:
     record = get_or_create_parsed_record(db, resume)
 
@@ -40,7 +69,6 @@ def run_parsing_pipeline(db: Session, resume: Resume) -> ParsedResume:
     db.commit()
 
     extraction = extract_resume_text(resume)
-
     if extraction["status"] != "text_extracted":
         record.status = "failed"
         record.parse_error = extraction["message"] or "Unable to extract sufficient text from this resume."
@@ -48,38 +76,52 @@ def run_parsing_pipeline(db: Session, resume: Resume) -> ParsedResume:
         db.refresh(record)
         return record
 
+    raw_text = extraction["text"]
+    hyperlinks = extraction.get("hyperlinks") or []
+    record.raw_text = raw_text
+
+    parser_used = "gemini"
+    parser_warning = None
+    structured = None
+
     try:
-        detected = detect_sections(extraction["text"])
+        structured = extract_with_gemini(raw_text, hyperlinks)
+    except Exception as e:
+        print(f"[Gemini extraction failed] {type(e).__name__}: {e}")  # temporary debug logging
+        parser_used = "fallback"
+        parser_warning = (
+            "AI-based extraction was unavailable, so a rule-based fallback parser was used instead. "
+            "Please review the extracted information carefully."
+        )
+        try:
+            structured = _run_fallback_extraction(record, raw_text, hyperlinks)
+        except Exception:
+            record.status = "failed"
+            record.parse_error = "An unexpected error occurred while parsing this resume's structured data."
+            db.commit()
+            db.refresh(record)
+            return record
+    record.personal_info = structured.get("personal_info")
+    record.summary = structured.get("summary")
+    record.skills = structured.get("skills") or []
+    record.education = structured.get("education") or []
+    record.experience = structured.get("experience") or []
+    record.projects = structured.get("projects") or []
+    record.certifications = structured.get("certifications") or []
+    record.achievements = structured.get("achievements") or []
 
-        record.raw_text = extraction["text"]
-        record.header_block = detected["header_block"]
-        record.summary = detected["sections"].get("summary")
-        record.skills_raw = detected["sections"].get("skills")
-        record.education_raw = detected["sections"].get("education")
-        record.experience_raw = detected["sections"].get("experience")
-        record.projects_raw = detected["sections"].get("projects")
-        record.certifications_raw = detected["sections"].get("certifications")
-        record.achievements_raw = detected["sections"].get("achievements")
-        record.other_sections = detected["other_sections"]
-        record.unrecognized_sections = detected["unrecognized_sections"]
+    extra_sections = dict(structured.get("other_sections") or {})
+    for key in ("organizations", "responsibilities", "publications", "volunteering", "languages", "interests"):
+        value = structured.get(key)
+        if value:
+            extra_sections[key] = value
+    record.other_sections = extra_sections
+    record.unrecognized_sections = structured.get("unrecognized_sections") or {}
 
-        record.personal_info = extract_personal_info(detected["header_block"], extraction.get("hyperlinks"))
-        record.skills = extract_skills(record.skills_raw)
-        record.education = extract_education(record.education_raw)
-        record.experience = extract_experience(record.experience_raw)
-        record.projects = extract_projects(record.projects_raw)
-        record.certifications = extract_certifications(record.certifications_raw)
-        record.achievements = extract_achievements(record.achievements_raw)
-
-    except Exception:
-        record.status = "failed"
-        record.parse_error = "An unexpected error occurred while parsing this resume's structured data."
-        db.commit()
-        db.refresh(record)
-        return record
-
+    record.parser_used = parser_used
+    record.parser_warning = parser_warning
     record.parse_error = None
-    record.status = "needs_review"
+    record.status = "needs_review"  # NEVER auto-verified, regardless of which parser ran
     record.parsed_at = datetime.now(timezone.utc)
 
     db.commit()

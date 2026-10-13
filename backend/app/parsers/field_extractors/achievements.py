@@ -9,17 +9,32 @@ def extract_achievements(achievements_raw: str | None) -> list[dict]:
         return []
 
     lines = [line.strip() for line in achievements_raw.split("\n") if line.strip()]
+    if not lines:
+        return []
+
     entries = []
-    for line in lines:
+    i = 0
+    while i < len(lines):
+        line = lines[i]
         bullet_match = BULLET_PATTERN.match(line)
         text = bullet_match.group(1).strip() if bullet_match else line
 
         year_match = YEAR_PATTERN.search(text)
         date = year_match.group() if year_match else None
 
-        parts = re.split(r"\s*[-–—:]\s*", text, maxsplit=1)
-        title = parts[0].strip() if parts else text
-        desc = parts[1].strip() if len(parts) > 1 else None
+        title = text
+        desc = None
+
+        if i + 1 < len(lines):
+            next_line = lines[i + 1]
+            next_bullet = BULLET_PATTERN.match(next_line)
+            if not next_bullet and len(next_line) <= 40 and not YEAR_PATTERN.search(next_line):
+                desc = next_line.strip()
+                i += 2
+            else:
+                i += 1
+        else:
+            i += 1
 
         entries.append({
             "title": title,

@@ -43,7 +43,7 @@ const navSections = [
     },
     {
         label: "Recommendations",
-        items: [{ to: "/recommendations", label: "AI Recommendations", icon: Sparkles }],
+        items: [{ to: "/ai-recommendations", label: "AI Recommendations", icon: Sparkles }],
     },
     {
         label: "Account",

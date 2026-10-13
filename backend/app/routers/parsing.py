@@ -26,7 +26,7 @@ def get_resume_sections(resume_id: int, current_user: User = Depends(get_current
     extraction = extract_resume_text(resume)
     if extraction["status"] != "text_extracted":
         raise HTTPException(status_code=422, detail=extraction["message"])
-    detected = detect_sections(extraction["text"])
+    detected = detect_sections(extraction["text"], block_metadata=extraction.get("blocks", []))
     return SectionDetectionOut(resume_id=resume.id, **detected)
 
 

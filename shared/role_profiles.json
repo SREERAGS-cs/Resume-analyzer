@@ -1,0 +1,152 @@
+[
+  {
+    "id": "software-developer",
+    "name": "Software Developer",
+    "description": "Build and maintain reliable applications, services, and software systems.",
+    "categories": {
+      "core_skills": ["software design", "programming", "testing", "debugging"],
+      "languages": ["Java", "Python", "JavaScript", "C#"],
+      "frameworks": ["Spring", ".NET", "Node.js"],
+      "databases": ["PostgreSQL", "MySQL", "MongoDB"],
+      "tools": ["Git", "Docker", "CI/CD"],
+      "concepts": ["data structures", "algorithms", "object-oriented design", "testing"],
+      "project_characteristics": ["maintainable architecture", "automated tests", "production reliability"],
+      "responsibilities": ["implement software features", "debug and maintain applications", "collaborate on software design"]
+    }
+  },
+  {
+    "id": "full-stack-developer",
+    "name": "Full Stack Developer",
+    "description": "Deliver complete web experiences across frontend, APIs, and data storage.",
+    "categories": {
+      "core_skills": ["frontend development", "backend development", "API integration", "database integration"],
+      "languages": ["JavaScript", "TypeScript", "Python", "Java"],
+      "frameworks": ["React", "Node.js", "Django", "Spring"],
+      "databases": ["PostgreSQL", "MySQL", "MongoDB"],
+      "tools": ["Git", "Docker", "REST", "CI/CD"],
+      "concepts": ["API design", "authentication", "responsive UI", "testing"],
+      "project_characteristics": ["end-to-end delivery", "frontend-backend integration", "deployment"],
+      "responsibilities": ["deliver user-facing features", "build APIs", "connect application data flows"]
+    }
+  },
+  {
+    "id": "frontend-developer",
+    "name": "Frontend Developer",
+    "description": "Create accessible, responsive interfaces that make complex products easy to use.",
+    "categories": {
+      "core_skills": ["interface development", "responsive design", "accessibility", "browser performance"],
+      "languages": ["JavaScript", "TypeScript", "HTML", "CSS"],
+      "frameworks": ["React", "Vue", "Angular"],
+      "databases": [],
+      "tools": ["Git", "Vite", "Webpack", "Playwright"],
+      "concepts": ["accessibility", "responsive design", "browser performance", "state management"],
+      "project_characteristics": ["usable interfaces", "cross-browser support", "component systems"],
+      "responsibilities": ["implement interface components", "integrate APIs", "test user experiences"]
+    }
+  },
+  {
+    "id": "backend-developer",
+    "name": "Backend Developer",
+    "description": "Design secure, dependable APIs and services that power applications.",
+    "categories": {
+      "core_skills": ["API development", "server-side programming", "database development", "service reliability"],
+      "languages": ["Python", "Java", "Go", "C#", "JavaScript"],
+      "frameworks": ["FastAPI", "Django", "Spring Boot", "Express"],
+      "databases": ["PostgreSQL", "MySQL", "Redis"],
+      "tools": ["Docker", "Git", "Kubernetes", "CI/CD"],
+      "concepts": ["API design", "distributed systems", "security", "caching"],
+      "project_characteristics": ["scalable services", "reliable data flows", "observability"],
+      "responsibilities": ["design APIs", "implement service logic", "manage persistent data", "operate backend systems"]
+    }
+  },
+  {
+    "id": "ai-ml-engineer",
+    "name": "AI/ML Engineer",
+    "description": "Build, evaluate, and deploy machine-learning systems and AI applications.",
+    "categories": {
+      "core_skills": ["model development", "model evaluation", "data preparation", "model deployment"],
+      "languages": ["Python", "SQL", "C++"],
+      "frameworks": ["PyTorch", "TensorFlow", "scikit-learn"],
+      "databases": ["PostgreSQL", "vector databases"],
+      "tools": ["MLflow", "Docker", "Git", "Jupyter"],
+      "concepts": ["model evaluation", "feature engineering", "MLOps", "responsible AI"],
+      "project_characteristics": ["reproducible experiments", "model deployment", "measured outcomes"],
+      "responsibilities": ["train and evaluate models", "build data pipelines", "deploy machine-learning systems"]
+    }
+  },
+  {
+    "id": "data-scientist",
+    "name": "Data Scientist",
+    "description": "Turn complex datasets into validated insights, models, and decisions.",
+    "categories": {
+      "core_skills": ["statistical analysis", "experiment design", "predictive modeling", "data storytelling"],
+      "languages": ["Python", "R", "SQL"],
+      "frameworks": ["pandas", "scikit-learn", "PyTorch"],
+      "databases": ["PostgreSQL", "BigQuery", "Snowflake"],
+      "tools": ["Jupyter", "Tableau", "Power BI", "Git"],
+      "concepts": ["statistics", "experiment design", "machine learning", "data storytelling"],
+      "project_characteristics": ["clear methodology", "validated findings", "decision impact"],
+      "responsibilities": ["analyze datasets", "develop models", "communicate evidence-based findings"]
+    }
+  },
+  {
+    "id": "data-analyst",
+    "name": "Data Analyst",
+    "description": "Answer business questions with careful analysis, reporting, and visualization.",
+    "categories": {
+      "core_skills": ["SQL analysis", "data cleaning", "dashboard development", "metric reporting"],
+      "languages": ["SQL", "Python", "R"],
+      "frameworks": ["pandas", "dbt"],
+      "databases": ["BigQuery", "Snowflake", "PostgreSQL"],
+      "tools": ["Excel", "Tableau", "Power BI"],
+      "concepts": ["data cleaning", "metric design", "statistics", "reporting"],
+      "project_characteristics": ["actionable dashboards", "reliable metrics", "stakeholder outcomes"],
+      "responsibilities": ["query and validate data", "build reports", "communicate analysis to stakeholders"]
+    }
+  },
+  {
+    "id": "devops-engineer",
+    "name": "DevOps Engineer",
+    "description": "Automate delivery and operate secure, resilient cloud infrastructure.",
+    "categories": {
+      "core_skills": ["infrastructure automation", "deployment automation", "monitoring", "incident response"],
+      "languages": ["Python", "Bash", "Go"],
+      "frameworks": ["Terraform", "Ansible"],
+      "databases": [],
+      "tools": ["Kubernetes", "Docker", "GitHub Actions", "Prometheus"],
+      "concepts": ["infrastructure as code", "CI/CD", "monitoring", "incident response"],
+      "project_characteristics": ["automated deployments", "service reliability", "operational visibility"],
+      "responsibilities": ["automate infrastructure", "maintain deployment pipelines", "improve service reliability"]
+    }
+  },
+  {
+    "id": "cybersecurity-engineer",
+    "name": "Cybersecurity Engineer",
+    "description": "Protect systems and data through secure design, detection, and response.",
+    "categories": {
+      "core_skills": ["security engineering", "threat analysis", "vulnerability management", "incident response"],
+      "languages": ["Python", "Bash", "PowerShell"],
+      "frameworks": ["NIST CSF", "MITRE ATT&CK"],
+      "databases": [],
+      "tools": ["SIEM", "Burp Suite", "Nmap", "Wireshark"],
+      "concepts": ["threat modeling", "vulnerability management", "incident response", "identity and access management"],
+      "project_characteristics": ["risk reduction", "security controls", "detection coverage"],
+      "responsibilities": ["assess security risks", "implement controls", "investigate security events"]
+    }
+  },
+  {
+    "id": "mobile-developer",
+    "name": "Mobile Developer",
+    "description": "Build performant, accessible applications for phones and tablets.",
+    "categories": {
+      "core_skills": ["mobile application development", "device-aware interface design", "offline-first design", "app deployment"],
+      "languages": ["Kotlin", "Swift", "Dart", "JavaScript"],
+      "frameworks": ["Android", "SwiftUI", "Flutter", "React Native"],
+      "databases": ["SQLite", "Realm", "Firebase"],
+      "tools": ["Android Studio", "Xcode", "Git", "Fastlane"],
+      "concepts": ["mobile accessibility", "offline-first design", "app lifecycle", "performance"],
+      "project_characteristics": ["device-aware UX", "store deployment", "crash-free reliability"],
+      "responsibilities": ["build mobile features", "integrate device capabilities", "prepare applications for release"]
+    }
+  }
+]

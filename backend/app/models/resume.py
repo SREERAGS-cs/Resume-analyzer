@@ -24,3 +24,9 @@ class Resume(Base):
     owner = relationship("User", back_populates="resumes")
     parsed_data = relationship("ParsedResume", back_populates="resume", uselist=False, cascade="all, delete-orphan")
     analysis_records = relationship("ResumeAnalysis", back_populates="resume", cascade="all, delete-orphan", order_by="ResumeAnalysis.created_at.desc()")
+    ats_analyses = relationship("ATSAnalysis", back_populates="resume", cascade="all, delete-orphan", order_by="ATSAnalysis.created_at.desc()")
+    job_matching_analyses = relationship("JobMatchingAnalysis", back_populates="resume", cascade="all, delete-orphan", order_by="JobMatchingAnalysis.created_at.desc()")
+
+    @property
+    def parsing_status(self) -> str:
+        return self.parsed_data.status if self.parsed_data else "not_started"

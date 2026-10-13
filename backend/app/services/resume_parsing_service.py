@@ -2,7 +2,7 @@ import os
 from fastapi import HTTPException, status
 
 from app.models.resume import Resume
-from app.parsers.pdf_parser import extract_text_from_pdf, extract_pdf_hyperlinks
+from app.parsers.pdf_parser import extract_text_from_pdf, extract_pdf_hyperlinks, extract_pdf_metadata
 from app.parsers.docx_parser import extract_text_from_docx
 from app.parsers.text_cleaner import clean_text
 
@@ -14,10 +14,12 @@ def extract_resume_text(resume: Resume) -> dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="The stored resume file could not be found on the server.")
 
     hyperlinks = []
+    blocks = []
     try:
         if resume.file_type == "pdf":
             raw_text = extract_text_from_pdf(resume.file_path)
             hyperlinks = extract_pdf_hyperlinks(resume.file_path)
+            blocks = extract_pdf_metadata(resume.file_path).get("blocks", [])
         elif resume.file_type == "docx":
             raw_text = extract_text_from_docx(resume.file_path)
         else:
@@ -36,7 +38,8 @@ def extract_resume_text(resume: Resume) -> dict:
             "status": "insufficient_text",
             "text": cleaned_text,
             "hyperlinks": hyperlinks,
+            "blocks": blocks,
             "message": "Very little text could be extracted from this document. It may be an image-based (scanned) resume, which isn't supported yet.",
         }
 
-    return {"status": "text_extracted", "text": cleaned_text, "hyperlinks": hyperlinks, "message": None}
+    return {"status": "text_extracted", "text": cleaned_text, "hyperlinks": hyperlinks, "blocks": blocks, "message": None}

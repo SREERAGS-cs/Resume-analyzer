@@ -60,6 +60,63 @@ function Section({ title, children }) {
     );
 }
 
+function renderValue(value) {
+    if (value === null || value === undefined || value === "") return null;
+    if (["string", "number", "boolean"].includes(typeof value)) return value;
+
+    if (Array.isArray(value)) {
+        if (value.every((item) => item === null || ["string", "number", "boolean"].includes(typeof item))) {
+            return (
+                <ul className="list-disc space-y-1 pl-5">
+                    {value.filter((item) => item !== null).map((item, index) => <li key={index}>{item}</li>)}
+                </ul>
+            );
+        }
+        return (
+            <div className="flex flex-col gap-3">
+                {value.map((item, index) => <div key={index}>{renderValue(item)}</div>)}
+            </div>
+        );
+    }
+
+    if (typeof value === "object") {
+        const prototype = Object.getPrototypeOf(value);
+        if (prototype !== Object.prototype && prototype !== null) {
+            return JSON.stringify(value) || String(value);
+        }
+
+        const entries = Object.entries(value).filter(([, fieldValue]) => (
+            fieldValue !== null && fieldValue !== undefined && fieldValue !== ""
+        ));
+        const titleEntry = entries.find(([key, fieldValue]) => (
+            ["name", "title", "degree", "job_title", "company", "institution"].includes(key)
+            && ["string", "number"].includes(typeof fieldValue)
+        ));
+
+        return (
+            <div className="border-l-2 border-line pl-3">
+                {titleEntry && <h4 className="text-sm font-medium text-ink">{titleEntry[1]}</h4>}
+                <div className="flex flex-col gap-1">
+                    {entries.filter(([key]) => key !== titleEntry?.[0]).map(([key, fieldValue]) => (
+                        <p key={key} className="text-xs text-ink/60">
+                            <span className="font-medium capitalize text-ink/75">{key.replace(/_/g, " ")}: </span>
+                            {renderValue(fieldValue)}
+                        </p>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    return JSON.stringify(value) || String(value);
+}
+
+function safeFieldValue(value) {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "object") return JSON.stringify(value) || "";
+    return value;
+}
+
 export default function ResumeReview() {
     const { resumeId } = useParams();
     const navigate = useNavigate();
@@ -176,6 +233,11 @@ export default function ResumeReview() {
                 {parsed && parsed.status !== "failed" && (
                     <div className="flex items-center gap-2">
                         <ParsingStatusBadge status={parsed.status} />
+                        {parsed?.parser_warning && (
+                            <div className="mb-4 rounded-md border border-signal/40 bg-signal/10 px-4 py-3 text-sm text-ink/80">
+                                {parsed.parser_warning}
+                            </div>
+                        )}
                         {!editing ? (
                             <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 rounded-md border border-line px-3.5 py-2 text-sm font-medium text-ink hover:bg-ink/5">
                                 <Pencil size={14} /> Edit
@@ -224,7 +286,7 @@ export default function ResumeReview() {
                                     <EditableField
                                         key={key}
                                         label={key.replace("_", " ")}
-                                        value={draft.personal_info?.[key]}
+                                        value={safeFieldValue(draft.personal_info?.[key])}
                                         editing={editing}
                                         onChange={(value) => updateDraft("personal_info", { ...draft.personal_info, [key]: value })}
                                     />
@@ -233,7 +295,7 @@ export default function ResumeReview() {
                         </Section>
 
                         <Section title="Professional Summary">
-                            <EditableField label="Summary" value={draft.summary} editing={editing} multiline onChange={(value) => updateDraft("summary", value)} />
+                            <EditableField label="Summary" value={safeFieldValue(draft.summary)} editing={editing} multiline onChange={(value) => updateDraft("summary", value)} />
                         </Section>
 
                         <Section title="Skills">
@@ -296,13 +358,13 @@ export default function ResumeReview() {
                         </Section>
                         {Object.entries(draft.other_sections || {}).map(([key, value]) => (
                             <Section key={key} title={key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}>
-                                <p className="whitespace-pre-line text-sm text-ink/80">{value}</p>
+                                <div className="whitespace-pre-line text-sm text-ink/80">{renderValue(value)}</div>
                             </Section>
                         ))}
 
                         {Object.entries(draft.unrecognized_sections || {}).map(([key, value]) => (
                             <Section key={key} title={key}>
-                                <p className="whitespace-pre-line text-sm text-ink/80">{value}</p>
+                                <div className="whitespace-pre-line text-sm text-ink/80">{renderValue(value)}</div>
                             </Section>
                         ))}
                     </div>

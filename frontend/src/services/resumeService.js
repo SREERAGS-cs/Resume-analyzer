@@ -1,5 +1,7 @@
 import api from "./api";
 
+export const RESUME_VERIFIED_EVENT = "resume:verified";
+
 export const uploadResume = async (file, onProgress) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -60,6 +62,7 @@ export const updateParsedResume = async (id, updates) => {
 
 export const verifyParsedResume = async (id) => {
     const response = await api.post(`/resumes/${id}/parsed/verify`);
+    window.dispatchEvent(new CustomEvent(RESUME_VERIFIED_EVENT, { detail: { resumeId: Number(id) } }));
     return response.data;
 };
 

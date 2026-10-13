@@ -4,42 +4,57 @@ DATE_PATTERN = re.compile(r"([A-Za-z]{3,9}\.?\s+\d{4}|\d{4})")
 LINK_PATTERN = re.compile(r"https?://\S+")
 
 
+KNOWN_ISSUERS = {
+    "udemy", "coursera", "scaler", "the linux foundation", "linux foundation",
+    "nptel", "edx", "udacity", "linkedin", "aws", "google", "microsoft", "oracle",
+    "deeplearning.ai", "simplilearn", "hackerrank", "leetcode",
+}
+
+
 def extract_certifications(certifications_raw: str | None) -> list[dict]:
     if not certifications_raw:
         return []
 
+    lines = [l.strip() for l in certifications_raw.split("\n") if l.strip()]
+    if not lines:
+        return []
+
     entries = []
-    for raw_line in certifications_raw.split("\n"):
-        raw_line = raw_line.strip()
-        if not raw_line:
-            continue
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        entry = {"name": None, "issuer": None, "date": None, "credential_link": None}
 
-        # A line may hold multiple certifications side by side in columns —
-        # a genuine double-space run (preserved by the cleaner) marks the boundary.
-        segments = [s.strip() for s in re.split(r"\s{2,}", raw_line) if s.strip()]
+        link_match = LINK_PATTERN.search(line)
+        if link_match:
+            entry["credential_link"] = link_match.group()
+            line = line.replace(link_match.group(), "").strip()
 
-        for segment in segments:
-            entry = {"name": None, "issuer": None, "date": None, "credential_link": None}
-            line = segment
+        date_match = DATE_PATTERN.search(line)
+        if date_match:
+            entry["date"] = date_match.group()
+            line = line.replace(date_match.group(), "").strip(" ,-–—")
 
-            link_match = LINK_PATTERN.search(line)
-            if link_match:
-                entry["credential_link"] = link_match.group()
-                line = line.replace(link_match.group(), "").strip()
-
-            date_match = DATE_PATTERN.search(line)
-            if date_match:
-                entry["date"] = date_match.group()
-                line = line.replace(date_match.group(), "").strip(" ,-–—")
-
-            if re.search(r"[-–—,]", line):
-                parts = re.split(r"[-–—,]", line, maxsplit=1)
-                entry["name"] = parts[0].strip()
-                entry["issuer"] = parts[1].strip() if len(parts) > 1 else None
+        if re.search(r"\s*[-–—]\s*", line):
+            parts = re.split(r"\s*[-–—]\s*", line, maxsplit=1)
+            entry["name"] = parts[0].strip()
+            entry["issuer"] = parts[1].strip()
+            i += 1
+        elif i + 1 < len(lines):
+            next_line = lines[i + 1]
+            next_lower = next_line.lower()
+            if next_lower in KNOWN_ISSUERS or any(iss in next_lower for iss in KNOWN_ISSUERS) or (len(next_line) <= 35 and not DATE_PATTERN.search(next_line)):
+                entry["name"] = line.strip()
+                entry["issuer"] = next_line.strip()
+                i += 2
             else:
                 entry["name"] = line.strip()
+                i += 1
+        else:
+            entry["name"] = line.strip()
+            i += 1
 
-            if entry["name"]:
-                entries.append(entry)
+        if entry["name"]:
+            entries.append(entry)
 
     return entries

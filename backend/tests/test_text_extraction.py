@@ -7,15 +7,16 @@ from app.parsers.text_cleaner import clean_text
 
 
 def make_test_pdf(path, pages_text):
-    from reportlab.pdfgen import canvas
-    c = canvas.Canvas(path)
+    import fitz
+    doc = fitz.open()
     for page_text in pages_text:
-        y = 800
+        page = doc.new_page()
+        y = 50
         for line in page_text.split("\n"):
-            c.drawString(50, y, line)
-            y -= 20
-        c.showPage()
-    c.save()
+            page.insert_text((50, y), line + " - test paragraph content for extraction")
+            y += 20
+    doc.save(path)
+    doc.close()
 
 
 def make_test_docx(path, paragraphs):

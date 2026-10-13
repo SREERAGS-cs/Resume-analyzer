@@ -24,14 +24,13 @@ export default function ResumeAnalysis() {
     const [loadingResumes, setLoadingResumes] = useState(true);
     const [selectedId, setSelectedId] = useState(null);
 
-    const [analysis, setAnalysis] = useState(null);      // mapped view-model or null
-    const [hasAnalysis, setHasAnalysis] = useState(null); // null = unknown/loading, false = none yet
+    const [analysis, setAnalysis] = useState(null);
     const [sectionsDetected, setSectionsDetected] = useState([]);
     const [notParsed, setNotParsed] = useState(false);
 
-    const [loadingAnalysis, setLoadingAnalysis] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
     const [error, setError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
 
     useEffect(() => {
         (async () => {
@@ -47,67 +46,61 @@ export default function ResumeAnalysis() {
         })();
     }, []);
 
-    useEffect(() => {
-        if (!selectedId) return;
-        loadForResume(selectedId);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedId]);
-
-    const loadForResume = async (resumeId) => {
-        setLoadingAnalysis(true);
-        setError(false);
-        setNotParsed(false);
+    const handleResumeSelect = (nextResumeId) => {
+        setSelectedId(Number(nextResumeId));
+        setAnalysis(null);
         setSectionsDetected([]);
-
-        const resume = resumes.find((r) => String(r.id) === String(resumeId));
-        const isParsed = resume?.parsing_status === "needs_review" || resume?.parsing_status === "verified";
-
-        if (isParsed) {
-            try {
-                const parsed = await getParsedResume(resumeId);
-                setSectionsDetected([
-                    { name: "Personal Information", detected: !!(parsed.personal_info?.full_name && parsed.personal_info?.email) },
-                    { name: "Professional Summary", detected: !!parsed.summary },
-                    { name: "Education", detected: (parsed.education || []).length > 0 },
-                    { name: "Projects", detected: (parsed.projects || []).length > 0 },
-                    { name: "Skills", detected: (parsed.skills || []).length > 0 },
-                    { name: "Certifications", detected: (parsed.certifications || []).length > 0 },
-                    { name: "Experience", detected: (parsed.experience || []).length > 0 },
-                ]);
-            } catch {
-                // non-fatal — overview list just stays empty
-            }
-        } else {
-            setNotParsed(true);
-        }
-
-        try {
-            const result = await getLatestAnalysis(resumeId);
-            setAnalysis(mapAnalysisResponse(result, resume?.display_name));
-            setHasAnalysis(true);
-        } catch (err) {
-            if (err.response?.status === 404) {
-                setHasAnalysis(false);
-                setAnalysis(null);
-            } else {
-                setError(true);
-            }
-        } finally {
-            setLoadingAnalysis(false);
-        }
+        setError(false);
+        setErrorMessage(null);
+        setNotParsed(false);
     };
 
     const handleAnalyze = async () => {
+        const targetId = selectedId || (resumes.length > 0 ? resumes[0].id : null);
+        if (!targetId) {
+            setError(true);
+            setErrorMessage("Please select a resume before running analysis.");
+            return;
+        }
+
+        if (!selectedId && targetId) {
+            setSelectedId(targetId);
+        }
+
         setAnalyzing(true);
         setError(false);
+        setErrorMessage(null);
+        setNotParsed(false);
+        setAnalysis(null);
+        setSectionsDetected([]);
+
         try {
-            const result = await analyzeResume(selectedId);
-            const resume = resumes.find((r) => String(r.id) === String(selectedId));
+            const result = await analyzeResume(targetId);
+            const resume = resumes.find((r) => String(r.id) === String(targetId));
             setAnalysis(mapAnalysisResponse(result, resume?.display_name));
-            setHasAnalysis(true);
-            setNotParsed(false);
-        } catch {
-            setError(true);
+
+            try {
+                const parsed = await getParsedResume(targetId);
+                setSectionsDetected([
+                    { name: "Personal Information", detected: !!(parsed?.personal_info?.full_name && parsed?.personal_info?.email) },
+                    { name: "Professional Summary", detected: !!parsed?.summary },
+                    { name: "Education", detected: (parsed?.education || []).length > 0 },
+                    { name: "Projects", detected: (parsed?.projects || []).length > 0 },
+                    { name: "Skills", detected: (Array.isArray(parsed?.skills) ? parsed.skills.length > 0 : !!parsed?.skills) },
+                    { name: "Certifications", detected: (parsed?.certifications || []).length > 0 },
+                    { name: "Experience", detected: (parsed?.experience || []).length > 0 },
+                ]);
+            } catch {
+                // non-fatal
+            }
+        } catch (err) {
+            if (err.response?.status === 400) {
+                setNotParsed(true);
+            } else {
+                setError(true);
+                const detail = err.response?.data?.detail;
+                setErrorMessage(typeof detail === "string" ? detail : "Something went wrong while analyzing your resume.");
+            }
         } finally {
             setAnalyzing(false);
         }
@@ -126,18 +119,18 @@ export default function ResumeAnalysis() {
                     <ResumeSelector
                         resumes={resumes}
                         selectedId={selectedId}
-                        onChange={setSelectedId}
+                        onChange={handleResumeSelect}
                         onAnalyze={handleAnalyze}
                         analyzing={analyzing}
                     />
 
-                    {(loadingAnalysis || analyzing) && <AnalysisLoadingState />}
+                    {analyzing && <AnalysisLoadingState />}
 
-                    {!loadingAnalysis && !analyzing && error && (
-                        <AnalysisErrorState onRetry={() => (hasAnalysis === false ? handleAnalyze() : loadForResume(selectedId))} />
+                    {!analyzing && error && (
+                        <AnalysisErrorState message={errorMessage} onRetry={handleAnalyze} />
                     )}
 
-                    {!loadingAnalysis && !analyzing && !error && notParsed && (
+                    {!analyzing && !error && notParsed && (
                         <div className="rounded-lg border border-dashed border-line bg-white p-6 text-center">
                             <p className="text-sm font-medium text-ink">This resume hasn't been parsed yet.</p>
                             <p className="mt-1 text-sm text-ink/60">Review and confirm its content before requesting an analysis.</p>
@@ -150,20 +143,16 @@ export default function ResumeAnalysis() {
                         </div>
                     )}
 
-                    {!loadingAnalysis && !analyzing && !error && !notParsed && hasAnalysis === false && (
-                        <div className="rounded-lg border border-dashed border-line bg-white p-6 text-center">
-                            <p className="text-sm font-medium text-ink">No analysis has been performed yet.</p>
-                            <p className="mt-1 text-sm text-ink/60">Run an analysis to see your resume's score and recommendations.</p>
-                            <button
-                                onClick={handleAnalyze}
-                                className="mt-4 rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper hover:bg-ink/90"
-                            >
-                                Analyze Resume
-                            </button>
+                    {!analyzing && !error && !notParsed && !analysis && (
+                        <div className="rounded-lg border border-dashed border-line bg-white p-8 text-center">
+                            <p className="font-display text-base font-semibold text-ink">Ready to analyze your resume</p>
+                            <p className="mt-1 text-sm text-ink/60">
+                                Click “Analyze Resume” above to evaluate your resume's overall score, content quality, and recommendations.
+                            </p>
                         </div>
                     )}
 
-                    {!loadingAnalysis && !analyzing && !error && analysis && (
+                    {!analyzing && !error && !notParsed && analysis && (
                         <div className="flex flex-col gap-6">
                             <OverallScore score={analysis.overallScore} />
 

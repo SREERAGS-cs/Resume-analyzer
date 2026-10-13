@@ -8,7 +8,23 @@ from app.models.resume import Resume
 from app.models.activity import ActivityLog
 
 ALLOWED_EXTENSIONS = {"pdf", "docx"}
+import zipfile
+import io
+# ...existing imports stay...
 
+def _validate_file_signature(extension: str, contents: bytes):
+    if extension == "pdf":
+        if not contents.startswith(b"%PDF-"):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The uploaded file is not a valid PDF.")
+    elif extension == "docx":
+        if not contents.startswith(b"PK\x03\x04"):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The uploaded file is not a valid DOCX.")
+        try:
+            with zipfile.ZipFile(io.BytesIO(contents)) as z:
+                if "word/document.xml" not in z.namelist():
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The uploaded file is not a valid DOCX.")
+        except zipfile.BadZipFile:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The uploaded file is not a valid DOCX.")
 
 def _get_extension(filename: str) -> str:
     return filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
@@ -31,7 +47,7 @@ async def save_resume_file(user_id: int, file: UploadFile) -> tuple[str, str, in
 
     contents = await file.read()
     size = len(contents)
-
+    _validate_file_signature(extension, contents)
     if size == 0:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The uploaded file is empty.")
 

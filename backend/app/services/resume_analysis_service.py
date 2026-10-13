@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
@@ -6,6 +7,8 @@ from app.models.user import User
 from app.services import resume_service
 from app.repositories import analysis_repository
 from app.ai.rule_based_analyzer import analyze_resume as run_rule_based_analysis
+
+logger = logging.getLogger(__name__)
 
 
 def _build_analyzer_input(resume: Resume) -> dict:
@@ -32,15 +35,17 @@ def analyze_resume(db: Session, resume_id: int, current_user: User):
 
     try:
         result = run_rule_based_analysis(analyzer_input)
-    except Exception:
+    except Exception as exc:
+        logger.exception("Failed to run rule-based resume analysis for resume_id=%s: %s", resume_id, exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unable to analyze this resume right now. Please try again.",
+            detail=f"Unable to analyze this resume right now: {exc}",
         )
 
     try:
         return analysis_repository.create_analysis(db, resume.id, result)
-    except Exception:
+    except Exception as exc:
+        logger.exception("Failed to persist resume analysis for resume_id=%s: %s", resume_id, exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to save the analysis result. Please try again.",

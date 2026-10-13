@@ -61,6 +61,13 @@ def extract_personal_info(header_block: str | None, hyperlinks: list[str] | None
             result["portfolio"] = url
             break
 
+    if not result["portfolio"]:
+        for uri in hyperlinks:
+            uri_lower = uri.lower()
+            if uri_lower.startswith(("http://", "https://")) and "linkedin.com" not in uri_lower and "github.com" not in uri_lower:
+                result["portfolio"] = uri
+                break
+
     for line in lines[:3]:
         if EMAIL_PATTERN.search(line) or PHONE_PATTERN.search(line):
             continue

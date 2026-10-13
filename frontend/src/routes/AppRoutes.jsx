@@ -14,17 +14,20 @@ import PublicOnlyRoute from "../components/common/PublicOnlyRoute";
 import ResumeCreationFlow from "../components/resume-builder/ResumeCreationFlow";
 import MyDrafts from "../pages/MyDrafts";
 import ResumeAnalysis from "../pages/ResumeAnalysis";
+import ATSAnalysis from "../pages/ATSAnalysis";
+import TargetRole from "../pages/TargetRole";
+import ResumeIntelligence from "../pages/ResumeIntelligence";
+import JobMatching from "../pages/JobMatching";
+import AIRecommendations from "../pages/AIRecommendations";
 
 const placeholderRoutes = [
-    { path: "/ats-score", title: "ATS Score" },
-    { path: "/job-matching", title: "Job Matching" },
-    { path: "/recommendations", title: "AI Recommendations" },
     { path: "/profile", title: "Profile" },
     { path: "/settings", title: "Settings" },
 ];
 
 export default function AppRoutes() {
     return (
+        <>
         <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
@@ -35,7 +38,12 @@ export default function AppRoutes() {
             <Route path="/my-drafts" element={<ProtectedRoute><MyDrafts /></ProtectedRoute>} />
             <Route path="/resume-history" element={<ProtectedRoute><ResumeHistory /></ProtectedRoute>} />
             <Route path="/resumes/:resumeId/review" element={<ProtectedRoute><ResumeReview /></ProtectedRoute>} />
+            <Route path="/select-role" element={<ProtectedRoute><TargetRole /></ProtectedRoute>} />
+            <Route path="/resume-analysis/:resumeId" element={<ProtectedRoute><ResumeIntelligence /></ProtectedRoute>} />
             <Route path="/resume-analysis" element={<ProtectedRoute><ResumeAnalysis /></ProtectedRoute>} />
+            <Route path="/ats-score" element={<ProtectedRoute><ATSAnalysis /></ProtectedRoute>} />
+            <Route path="/job-matching" element={<ProtectedRoute><JobMatching /></ProtectedRoute>} />
+            <Route path="/ai-recommendations" element={<ProtectedRoute><AIRecommendations /></ProtectedRoute>} />
 
             {/* Shared provider so template selection <-> builder navigation never loses data */}
             <Route path="/" element={<ProtectedRoute><ResumeCreationFlow /></ProtectedRoute>}>
@@ -49,5 +57,6 @@ export default function AppRoutes() {
 
             <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
+        </>
     );
 }
