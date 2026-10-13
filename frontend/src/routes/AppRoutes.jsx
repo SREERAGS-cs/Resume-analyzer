@@ -19,11 +19,10 @@ import TargetRole from "../pages/TargetRole";
 import ResumeIntelligence from "../pages/ResumeIntelligence";
 import JobMatching from "../pages/JobMatching";
 import AIRecommendations from "../pages/AIRecommendations";
+import Profile from "../pages/Profile";
+import Settings from "../pages/Settings";
 
-const placeholderRoutes = [
-    { path: "/profile", title: "Profile" },
-    { path: "/settings", title: "Settings" },
-];
+const placeholderRoutes = [];
 
 export default function AppRoutes() {
     return (
@@ -44,6 +43,8 @@ export default function AppRoutes() {
             <Route path="/ats-score" element={<ProtectedRoute><ATSAnalysis /></ProtectedRoute>} />
             <Route path="/job-matching" element={<ProtectedRoute><JobMatching /></ProtectedRoute>} />
             <Route path="/ai-recommendations" element={<ProtectedRoute><AIRecommendations /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
             {/* Shared provider so template selection <-> builder navigation never loses data */}
             <Route path="/" element={<ProtectedRoute><ResumeCreationFlow /></ProtectedRoute>}>

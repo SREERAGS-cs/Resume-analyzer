@@ -1,12 +1,42 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config.database import Base, engine, ensure_ats_target_role_column
-from app.models import user, resume, activity, parsed_resume, resume_draft, analysis, ats_analysis, job_matching  # noqa: F401
-from app.routers import auth, resumes, dashboard, parsing, resume_drafts, resume_analysis, ats, job_matching, jobs
+from app.config.database import (
+    Base,
+    engine,
+    ensure_ats_target_role_column,
+    ensure_user_profile_columns,
+    ensure_user_settings_table,
+)
+from app.models import (  # noqa: F401
+    user,
+    user_settings,
+    resume,
+    activity,
+    parsed_resume,
+    resume_draft,
+    analysis,
+    ats_analysis,
+    job_matching,
+)
+from app.routers import (
+    auth,
+    users,
+    settings,
+    resumes,
+    dashboard,
+    parsing,
+    resume_drafts,
+    resume_analysis,
+    ats,
+    job_matching,
+    jobs,
+)
 
 Base.metadata.create_all(bind=engine)
 ensure_ats_target_role_column()
+ensure_user_profile_columns()
+ensure_user_settings_table()
 
 app = FastAPI(title="Resume Analyzer API")
 
@@ -19,6 +49,8 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(settings.router)
 app.include_router(resumes.router)
 app.include_router(dashboard.router)
 app.include_router(parsing.router)

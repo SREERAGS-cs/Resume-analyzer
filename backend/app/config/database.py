@@ -30,6 +30,37 @@ def ensure_ats_target_role_column() -> None:
                 )
 
 
+def ensure_user_profile_columns() -> None:
+    with engine.begin() as connection:
+        inspector = inspect(connection)
+        if "users" not in inspector.get_table_names():
+            return
+        columns = {column["name"] for column in inspector.get_columns("users")}
+        additions = {
+            "phone": "VARCHAR(50) NULL",
+            "location": "VARCHAR(150) NULL",
+            "linkedin_url": "VARCHAR(255) NULL",
+            "github_url": "VARCHAR(255) NULL",
+            "portfolio_url": "VARCHAR(255) NULL",
+            "education": "VARCHAR(255) NULL",
+            "target_role": "VARCHAR(150) NULL",
+            "bio": "TEXT NULL",
+        }
+        for column_name, column_type in additions.items():
+            if column_name not in columns:
+                connection.execute(
+                    text(f"ALTER TABLE users ADD COLUMN {column_name} {column_type}")
+                )
+
+
+def ensure_user_settings_table() -> None:
+    with engine.begin() as connection:
+        inspector = inspect(connection)
+        if "user_settings" not in inspector.get_table_names():
+            if "user_settings" in Base.metadata.tables:
+                Base.metadata.tables["user_settings"].create(bind=connection, checkfirst=True)
+
+
 def get_db():
     db = SessionLocal()
     try:

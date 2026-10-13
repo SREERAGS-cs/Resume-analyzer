@@ -33,8 +33,21 @@ export function AuthProvider({ children }) {
         setUser(null);
     };
 
+    const updateUser = (updatedFields) => {
+        setUser((prev) => {
+            const next = { ...prev, ...updatedFields };
+            if (localStorage.getItem("user")) {
+                localStorage.setItem("user", JSON.stringify(next));
+            }
+            if (sessionStorage.getItem("user")) {
+                sessionStorage.setItem("user", JSON.stringify(next));
+            }
+            return next;
+        });
+    };
+
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, logout }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, logout, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

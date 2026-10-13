@@ -6,6 +6,7 @@ from app.models.resume_draft import ResumeDraft
 from app.models.analysis import ResumeAnalysis
 from app.models.ats_analysis import ATSAnalysis
 from app.models.job_matching import JobMatchingAnalysis
+from app.models.user_settings import UserSettings
 
 __all__ = [
     "User",
@@ -16,4 +17,5 @@ __all__ = [
     "ResumeAnalysis",
     "ATSAnalysis",
     "JobMatchingAnalysis",
+    "UserSettings",
 ]
