@@ -12,3 +12,4 @@ pdfplumber
 python-docx
 pymupdf
 google-genai
+email-validator
