@@ -10,7 +10,7 @@ import ATSPerformance from "../components/dashboard/ATSPerformance";
 import RecentActivity from "../components/dashboard/RecentActivity";
 import QuickActions from "../components/dashboard/QuickActions";
 import { FileText, Target, Briefcase, ScanSearch } from "lucide-react";
-import { getDashboardSummary } from "../services/dashBoardService";
+import { getDashboardSummary } from "../services/dashBoardService.js";
 
 export default function Dashboard() {
     const { user } = useAuth();
