@@ -13,3 +13,4 @@ python-docx
 pymupdf
 google-genai
 email-validator
+python-multipart
